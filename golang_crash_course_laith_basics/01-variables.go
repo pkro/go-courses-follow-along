@@ -56,4 +56,11 @@ func main() {
 	// constants
 	const myName = "pkro"
 
+	// type casting
+	var a int = 10
+	var b int8 = 3
+	var c = a + (int(b))
+
+	fmt.Println(c)
+
 }
