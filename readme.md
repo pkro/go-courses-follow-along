@@ -1,5 +1,8 @@
 # Golang stuff from various videos on youtube
 
+<!-- START doctoc -->
+<!-- END doctoc -->
+
 ## Overview / motivation
 
 - Strongly (type can't be changed after declaration) and statically (types have to be defined at compile time) typed
