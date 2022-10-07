@@ -1,0 +1,17 @@
+package main
+
+import "fmt"
+
+type person struct {
+	name string
+	age  int
+}
+
+func initPerson() *person {
+	m := person{name: "noname", age: 40}
+	return &m
+}
+
+func main() {
+	fmt.Println(initPerson())
+}

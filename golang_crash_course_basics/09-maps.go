@@ -5,6 +5,9 @@ import "fmt"
 func main() {
 	// maps are unordered like in most other languages
 
+	// declare with values:
+	emails := map[string]string{"Bob": "bob@gmail.com", "Joe": "joe@gmail.com"}
+	fmt.Println(emails["Bob"])
 	// create empty mape: make(map[key-type]val-type)
 	cart := make(map[string]int)
 	cart["milk"] = 3
@@ -27,5 +30,7 @@ func main() {
 
 	// delete items
 	delete(cart, "cheese")
+
+	fmt.Println(len(cart)) // length like usual with len
 
 }

@@ -12,13 +12,13 @@ func main() {
 	b += 1
 	fmt.Println(a, b) // 1 2
 
+	// the same is true for structs
 	s := struct {
 		someValue int
 	}{
 		someValue: 3,
 	}
 
-	// the same is true for structs
 	var s2 = s
 	s2.someValue += 10
 	fmt.Println(s)  // {3}
@@ -34,13 +34,22 @@ func main() {
 
 	// if we want the same to happen with primitives (or structs), we can use pointers:
 	var c = 1
-	var d *int // "d is a pointer to an int
+	var d *int // d is a pointer to an int
 	// assign d the memory location of c;
 	// as we defined the type of the pointer above, go knows the end of the memory location
 	d = &c
 	fmt.Println(c, d) // 1 0xc000020118
 
-	// access the value at the pointers memory location
+	// dereference (access) / change the value at the pointers memory location
 	*d++
 	fmt.Println(c) // 2
+
+	// passing references (memory address) to functions
+	x := 5
+	squareAdd(&x)
+	fmt.Println(x) // 25
+}
+
+func squareAdd(p *int) {
+	*p *= *p
 }

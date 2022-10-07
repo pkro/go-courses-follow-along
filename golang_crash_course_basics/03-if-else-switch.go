@@ -3,11 +3,10 @@ package main
 import "fmt"
 
 func main() {
-
-	// arithmetic operators
 	var a = 4
 	var b = 3
 
+	// parenthesis are optional, convention is not to use them
 	if a == b {
 		fmt.Println("false")
 	} else if a > b {

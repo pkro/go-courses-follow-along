@@ -1,12 +1,6 @@
-Golang stuff from various videos on youtube
+# Golang stuff from various videos on youtube
 
-# Notes from "Learn Go Programming - Golang Tutorial for Beginners"
-
-https://www.youtube.com/watch?v=YS4e4q9oBaU
-
-## Introduction
-
-### Overview / motivation
+## Overview / motivation
 
 - Strongly (type can't be changed after declaration) and statically (types have to be defined at compile time) typed
 - Strong community
@@ -18,42 +12,24 @@ https://www.youtube.com/watch?v=YS4e4q9oBaU
     - compiles to standalone libraries (no external runtime or libraries needed)
 - focused on server applications (no UI libraries)
 
-### Ressources
+## Ressources
 
 - https://go.dev/ including a little in-built [IDE](https://go.dev/play/)
 - Documentation: https://go.dev/doc/
 - https://go.dev/doc/effective_go required reading for serious development
 - https://pkg.go.dev/std Package documentation
 - [go forum](https://forum.golangbridge.org/categories)
-- https://gobyexample.com/
+- https://gobyexample.com/ (concise explanations with code for everything covered here)
 
+## Project Structure
 
-### Packages
+Global GOPATH (usually under `~/go`) contains:
 
-Every go program ist structured into packages. Every file needs to be part of a package. The package `main` is the entrypoint of the application.
+- src/: location of Go source code (for example, .go, .c, .g, .s).
+- pkg/: location of compiled package code (for example, .a).
+- bin/: location of compiled executable programs built by Go.
 
-`package main`
-
-### Imports
-
-Syntax:
-
-`import(
-"fmt"
-"anotherPackage"
-)`
-
-or optionally `import "fmt"` if only one library is used.
-
-All imports have to be used somewhere in order for the program to be compiled.
-
-
-## Syntax
-
-- no semicolons, thus no multiple statements in a line.
-- comments: the usual `//` and `/* blah */`
-
-## Installation / IDE
+## Setup
 
 Install and put bin path in `~/.bashrc`: `export PATH=$PATH:/usr/local/go/bin` (default go path on linux).
 
@@ -67,7 +43,7 @@ Multiple GOPATH paths can be defined, e.g. `/home/pk/go:/home/pk/projects/go/hel
 
 The *first* path is where libraries are installed, but all paths will be *searched* when looking for libraries.
 
-I guess the IDE should take care of this for projects I guess.
+I guess the IDE should take care of this for projects.
 
 https://www.digitalocean.com/community/tutorials/understanding-the-gopath
 
@@ -78,6 +54,58 @@ https://www.digitalocean.com/community/tutorials/understanding-the-gopath
 **Update**: "new" way to install global libs / binaries: `go install  github.com/nsf/gocode@latest`
 
 A go workspace is any folder with a `src` subfolder. Other (generated) ones are `bin` and `pkg` just as in the monolithic `~/go`path.
+
+## Packages
+
+Every go program ist structured into packages. Every file needs to be part of a package. The package `main` is the entrypoint of the application.
+
+`package main`
+
+### Imports
+
+Syntax (no comma!):
+
+    import(
+      "fmt"
+      "math"
+    )
+
+or optionally `import "fmt"` if only one library is used.
+
+All imports have to be used somewhere in order for the program to be compiled.
+
+### Using 3rd party packages
+
+Problem: We want to use a 3rd party package, e.g. hosted on GitHub. We *don't* want to use `go get -u github.com/gorilla/mux` to install the package globally on the system.
+
+1) Turn off "optimize imports" as a save action in IntelliJ as otherwise they will be removed, so go can't analyze which packages are needed (is that really the way to go?)
+2) include the package needed in `main.go` (or wherever it is needed), e.g. `import "github.com/gorilla/mux"`
+3) In the projects folder (where `main.go` is located, run `go mod init [url or fake url to project]`, e.g. `go mod init example.com/packages`
+4) run `go mod tidy` to add module requirements and version numbers inferred by the imports to the `go.mod` file and also adds a `go.sum` file with version numbers and sub-dependencies.
+5) When removing imports, re-run `go mod tidy` to remove them from the `go.mod` and `go.sum` files.
+
+### Creating own packages
+
+1) Make sure the project using the module itself was initialized as a module like we did above.
+2) add a folder and code with the package name in the projects directory, e.g. `strutil/strutil.go`; *remember that only functions and variables with an *U*ppercase first character are exported*
+3) Add the package name to be used at the top in `strutil.go`: `package strutil`. It is probably best to keep the packages directory name, file name (if there's only one) and package name the same
+4) use the *same url* used to initialize the project to import the package: `import "example.com/packages/strutil"`
+5) use the package, e.g. `strutil.Reverse("pkro")`
+
+Files in the same package can use each other's functions / variables without importing them explicitly. This goes for all global variables in the packages files, uppercase or not. 
+
+If files are in the same package, they are available in the main import and don't need to be imported separately.
+
+See example in `golang_crash_course_basics/11-packages`.
+
+## General syntax notes
+
+- no semicolons, thus no multiple statements in a line.
+- comments: the usual `//` and `/* blah */`
+- Strings: only use `"`
+- all variables *inside a function* and imported modules must be used for the project to compile
+- null is `nil`
+- Everything is passed by value (except when using pointers)
 
 ## Variables
 
@@ -94,7 +122,7 @@ Declaration syntax:
 3) `varname := value`, e.g. `x := 10` (the compiler figures the type out from the value)
 - values have to be unambiguous to be inferred correctly; when adding a decimal sign behind a whole number, `float64` is automatically inferred
 
-Variables are initialized to `0`.
+Variables are initialized to `0` or false or empty string, depending on the type.
 
     package main
     
@@ -128,7 +156,117 @@ becomes
         season       int    = 11
     )
 
-### Redeclaration and shadowing
+
+Full code example with comments
+
+    package main
+
+    import (
+        "fmt"
+    )
+    
+    /*
+    Main datatypes:
+    string
+    bool
+    int (depending on system 32 or 64 signed integer)
+    int8 int16 int32 int64
+    uint8 uint16 uint32 uint64
+    uintptr (pointer to unsigned int)
+    byte (alias for uint8)
+    rune (alias for int32)
+    float32 float64
+    complex64 complex128
+    */
+    
+    // error - this initialization can only be used inside a function
+    // ohNo := "noooo"
+    
+    // this is fine
+    var ohYes = "yeees"
+    
+    // also fine
+    var ohYes2 string = "yay"
+    
+    func main() {
+    
+        // the global variables defined in the module file are available
+        // and can be shadowed inside a function in the same file / module
+        fmt.Println(ohYes)
+    
+        // declaration +  assignment
+        // best practice is to let go infer the type
+        var favBook = "Lord of the rings"
+        fmt.Println(favBook) // "Lord of the rings"
+        // show the type of the variable
+        fmt.Printf("%T\n", favBook) // string
+    
+        // individual characters can be accessed with array syntax
+        secondLetterOrd := favBook[1] // 111
+        // cast to string
+        secondLetter := string(favBook[1]) // o
+        fmt.Println(secondLetterOrd, secondLetter) // 111 o
+        
+        // reassignment
+        favBook = "Rambo the novel"
+        fmt.Println(favBook)
+        // go is typed, favBook was initialized with a string, so
+        // it can't be reassigned to a number
+        // favBook = 12;
+    
+        // explicit type declaration and assignment
+        var bigbigNumber complex64 = 3
+        fmt.Println(bigbigNumber)
+        var thirdBook string
+        thirdBook = "Brothers Karamasov"
+        fmt.Println(thirdBook)
+    
+        var myAge int
+        var isItTrue bool
+        var someBook string
+    
+        // default values
+        fmt.Println(myAge)    // 0
+        fmt.Println(isItTrue) // false
+        fmt.Println(someBook) // ""
+    
+        // create multiple variables (compound creation)
+        var favNumber, favCandy = 123, "pure honey"
+        // block creation
+        var (
+            favNumber2 = 123
+            favCandy2  = "pure honey"
+        )
+        fmt.Println(favNumber, favCandy, favNumber2, favCandy2)
+    
+        // declaration and assignment without using var
+        // this can only be used inside a function
+        favAnimal := "tiger"
+        fmt.Println(favAnimal)
+    
+        pet1, pet2, pet3 := "cat", "dog", "rat"
+        fmt.Println(pet1, pet2, pet3)
+
+        // so variables can be swapped without a tmp
+        pet1, pet2 = pet2, pet1
+    
+        // variables can not be reassigned using :=
+        // pet3 := "other pet"
+    
+        // UNLESS multiple variables are assigned and at least one is new
+        pet4, pet3 := "zebra", "still rat"
+        fmt.Println(pet4, pet3)
+    
+        // constants (can't be reassigned)
+        const myName = "pkro"
+    
+        // type casting
+        var a int = 10
+        var b int8 = 3
+        var c = a + (int(b))
+    
+        fmt.Println(c)
+    }
 
 Variables declared in an outer scope can be redeclared (shadowed) by a new variable of the same name in an inner scope:
 
@@ -228,3 +366,265 @@ Operators that can be used with integers:
 	fmt.Println(a >> 3) // 1  - 00001000 becomes 00000001
 
 #### Decimal types
+
+## Functions
+
+Syntax: 
+
+- No param, no return type: `func functionName() {...}`
+- Params of different types, with return type: `func functionName(paramName paramyType, p2 p2type,...) returnType {...}`
+- Params of the same type: `func functionName(int1, int2 int) returnType {...}`
+
+## Arrays and slices
+
+- fixed length
+- typed
+
+
+    // initialize without values
+    var stuff [3]string
+    stuff[1] = "hey"
+    fmt.Println(stuff) // ["" "hey" ""]
+
+    // initialize & assign array
+    purchases := [5]float32{9.99, 2, 4, 95, 4}
+    fmt.Println(purchases)
+
+    // size can be skipped if values are assigned during initialization
+    moreStuff := []int{1, 2, 3}
+    fmt.Println(moreStuff)
+
+    // error - array length is fixed so no new entries can be added:
+    //purchases[5] = "hey"
+
+    // arrays are not read only (if that needs to be said)
+    purchases[len(purchases)-1] += 10
+    fmt.Println(purchases) // {9.99, 2, 4, 95, 4}
+
+    // get a range of items like in python; also see 08-slices.go
+    fmt.Println(purchases[1:3])                 // [2 4]
+    fmt.Println(reflect.TypeOf(purchases[1:3])) // []float32
+
+    // mixed value type array using interface
+    var mixed [3]interface{}
+    mixed[0] = 1
+    mixed[1] = false
+    mixed[2] = "a string!"
+    fmt.Println(mixed)
+
+    // still only one loop type in go
+    for i := 0; i < len(purchases); i++ {
+        fmt.Println(purchases[i])
+    }
+
+    // foreach-like
+    for index, itr := range purchases {
+        fmt.Print(index, " : ", itr, "\n")
+    }
+
+    // if we use only one variable in the for loop,
+    // it by default refers to the value in the container.
+    for val := range purchases {
+        fmt.Print(val, " ")
+    }
+
+## Slices
+
+Slices can contain different types and are a wrapper for arrays.
+
+    // create a normal array
+    purchases := [5]float32{9.99, 2, 4, 95, 4}
+
+	// get a slice of an array, like to python list style
+	mySlice := purchases[:] // all items
+	fmt.Println(mySlice)
+
+	// syntax is [startIdx:endIdx+1] like in python (range)
+	fmt.Println(purchases[1:3]) // [2 4]
+
+	// omitting means from the start / to the end
+	fmt.Println(mySlice[:2]) // [9.99 2]
+
+	mySlice = append(mySlice, 99)
+	fmt.Println(mySlice) // [9.99 2 4 95 4 99]
+
+	// inline creation of slice
+	anotherSlice := []float32{1, 2, 3, 4, 5}
+	fmt.Println(anotherSlice)
+
+	// combining slices; like the JS spread operator, just on the right side
+	combined := append(mySlice, anotherSlice...)
+	fmt.Println(combined)
+
+## Conditionals
+
+    // parenthesis are optional, convention is not to use them
+	if a == b {
+		fmt.Println("false")
+	} else if a > b {
+		fmt.Println("true")
+	} else {
+		fmt.Println("not happening")
+	}
+
+	// no break necessary
+	switch a {
+	case 3:
+		fmt.Println("it's 3")
+	case 4:
+		fmt.Println("it's 4")
+	default:
+		fmt.Println("it's probably not serious")
+	}
+
+## Loops
+
+Only one loop construct (no while or do). Others can be constructed as with all for loops in most languages.
+
+    // classic for loop
+	for i := 0; i < 10; i++ { // paranthesis are always required, even for just one line
+		fmt.Println(i)
+	}
+
+	// while (no semicolons necessary if only condition is used)
+	i := 0
+	for i < 10 {
+		i++
+		fmt.Println(i)
+	}
+
+    // foreach (also see range)
+	var ids = []int{12, 33, 53, 6324, 4}
+
+	for idx, id := range ids {
+		fmt.Println(idx, id)
+	}
+
+## Maps
+
+Maps are unordered like in most other languages.
+
+    // declare with values:
+	emails := map[string]string{"Bob": "bob@gmail.com", "Joe": "joe@gmail.com"}
+	fmt.Println(emails["Bob"])
+
+    // create empty mape: make(map[key-type]val-type)
+	cart := make(map[string]int)
+	cart["milk"] = 3
+	cart["cheese"] = 2
+	fmt.Println(cart) // map[cheese:2 milk:3]
+
+	// default values still work
+	cart["someNewItem"] += 3
+	fmt.Println(cart) // map[cheese:2 milk:3 someNewItem:3]
+
+	// accessing values
+	fmt.Println(cart["chees"])
+
+	// check if a value exists and assign it
+	// the second value is a boolean that is true if the item was found in the map
+	milkInStore, foundItem := cart["milk"]
+	if foundItem {
+		fmt.Println(milkInStore)
+	}
+
+	// delete items
+	delete(cart, "cheese")
+
+	fmt.Println(len(cart)) // length like usual with len
+
+## Range
+
+Used to iterate over data structures like arrays and maps similar to a `foreach` construct.
+
+    var ids = []int{12, 33, 53, 6324, 4}
+
+	// foreach-like looping over array or map
+	for idx, id := range ids {
+		fmt.Println(idx, id)
+	}
+
+	// if the value is required, both key and value are necessary,
+	// convention is to use "_" if one of them is unused
+	for _, id := range ids {
+		fmt.Println(id)
+	}
+
+	// value can be omitted if only key is required
+	emails := map[string]string{"Bob": "bob@gmail.com", "Joe": "joe@gmail.com"}
+	for name := range emails {
+		fmt.Printf("Name is %s\n", name)
+	}
+
+## Pointers
+
+- Pretty much like C pointers.
+- Used to pass large amounts of data to functions without copying it (at the expense of immutability of data).
+
+
+Each function call (that is not run as a [goroutine](https://go.dev/tour/concurrency/1)) can only access data in the memory of it's frame on the stack. That's why arguments passed to a function are *copied* to the memory of the frame, as is the returned result.
+
+Screenshots from [Jummin Lee golang tutorial](https://www.youtube.com/watch?v=sTFJtxJXkaY):
+
+![stack](img/frame.png)
+
+For efficiency when passing large amounts of data, we can pass the memory address of a variable to modify it directly in a function that runs in another frame.
+
+![stack](img/pointer.png)
+
+If we *create* a variable in a function and want to return it as a pointer, the memory address normally wouldn't exist anymore after the function finishes and its frame is destroyed (removed from the stack). 
+We can do this anyway because the compiler analyses the code and puts the created variable on the *heap* instead of the frame in the stack.
+
+![stack](img/heap.png)
+
+Putting too much data on the heap is a burden for the garbage collector (the stack is self-cleaning as frames are automatically removed when a scope finishes).
+
+    func main() {
+        // as in JS, when assigning a primitive variable to another
+        // the value is copied
+        var a = 1
+        var b = a
+        b += 1
+        fmt.Println(a, b) // 1 2
+    
+        // the same is true for structs
+        s := struct {
+            someValue int
+        }{
+            someValue: 3,
+        }
+    
+        var s2 = s
+        s2.someValue += 10
+        fmt.Println(s)  // {3}
+        fmt.Println(s2) // {13}
+    
+        // array are assigned by reference / pointer,
+        // so changing ar2 also changes ar as they are the
+        // same object in memory
+        ar := []int{1, 2, 3}
+        ar2 := ar
+        ar2[0] = 99
+        fmt.Println(ar, ar2) // [99 2 3] [99 2 3]
+    
+        // if we want the same to happen with primitives (or structs), we can use pointers:
+        var c = 1
+        var d *int // d is a pointer to an int
+        // assign d the memory location of c;
+        // as we defined the type of the pointer above, go knows the end of the memory location
+        d = &c
+        fmt.Println(c, d) // 1 0xc000020118
+    
+        // dereference (access) / change the value at the pointers memory location
+        *d++
+        fmt.Println(c) // 2
+    
+        // passing references (memory address) to functions
+        x := 5
+        squareAdd(&x)
+        fmt.Println(x) // 25
+    }
+    
+    func squareAdd(p *int) {
+        *p *= *p
+    }
