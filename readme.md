@@ -109,6 +109,7 @@ See example in `golang_crash_course_basics/11-packages`.
 - all variables *inside a function* and imported modules must be used for the project to compile
 - null is `nil`
 - Everything is passed by value (except when using pointers)
+- Concatenating non-string values with `+` is not possible; import `strconv` and use `"hey" + strconv.Itoa(numVar)` for conversion or use one of the `fmt.Printf` and related functions, e.g. `return fmt.Sprintf("Hey I'm %s and I'm %d years old", p.name, p.age)`
 
 ## Variables
 
@@ -377,6 +378,14 @@ Syntax:
 - No param, no return type: `func functionName() {...}`
 - Params of different types, with return type: `func functionName(paramName paramyType, p2 p2type,...) returnType {...}`
 - Params of the same type: `func functionName(int1, int2 int) returnType {...}`
+- functions are first class and can be returned; example return see [closures](#closures)
+
+Anonymous and IIFEs are supported:
+
+    // anonymous function with immediately invoked function expression (IIFE)
+	func() {
+		fmt.Println("hey ho")
+	}()
 
 ## Arrays and slices
 
@@ -631,3 +640,189 @@ Putting too much data on the heap is a burden for the garbage collector (the sta
     func squareAdd(p *int) {
         *p *= *p
     }
+
+## Closures
+
+Functions are first class in go and can be passed as an argument and return from a function.
+
+Classes returned from a function keep access to the variables defined from their surrounding scope even after that scope is destroyed with no special syntax necessary, just like in javascript.
+
+    func adder() func(int) int {
+        sum := 0 // the returned function keeps access to this var 
+        return func(x int) int {
+            sum += x
+            return sum
+        }
+    }
+    
+    func main() {
+        myAdder := adder()
+        for i := 1; i <= 3; i++ {
+            myAdder(i)
+        }
+    
+        fmt.Println(myAdder(0)) // 6
+    }
+
+## Structs
+
+### Values
+
+Go’s structs are typed collections of fields.
+
+    func main() {
+        type Animal struct {
+            class  string
+            age    int
+            gender bool
+        }
+    
+        var teddy = Animal{
+            class:  "bear", // comma!
+            age:    24,
+            gender: true,
+        }
+    
+        fmt.Println(teddy)
+        fmt.Println(teddy.age)
+
+        // structs are mutable
+        teddy.age += 1
+        fmt.Println(teddy.age)
+    
+        // skip field names; fields must be in order for this to work
+        var leo = Animal{"lion", 12, false}
+        fmt.Println(leo)
+    
+        // don't assign property values
+        var lalo = Animal{}
+        fmt.Println(lalo) // { 0 false}
+    
+        // anonymous struct
+        var tuco = struct {
+            class  string
+            age    int
+            gender bool
+        }{
+            class:  "Penguin",
+            age:    1,
+            gender: false,
+        }
+    
+        fmt.Println(tuco)
+
+        // Pointers are fine with structs
+        pTuco := &tuco
+        //pointers are automatically dereferenced.
+        fmt.Println(pTuco.age)
+    }
+
+### Methods
+
+Methods are defined outside of structs!
+
+Receiver types:
+
+- Pointer receivers: to change struct members
+- Value receivers: "normal" methods that don't change anything
+
+
+    type Person struct {
+        name, title string // shortcut for multiple properties of the same type
+        age         int
+    }
+  
+    // Adding a method to the struct;
+    // the struct members are accessible by p (like "this" in JS, name doesn't matter)
+  
+    // value receiver (doesn't change anything)
+    func (p Person) greet() string {
+        return fmt.Sprintf("Hey I'm %s and I'm %d years old", p.name, p.age)
+    }
+  
+    // pointer receiver (can change values of the struct)
+    func (p *Person) celebrateBirthday() {
+        p.age++
+    }
+
+## Interfaces
+
+Interfaces are named collections of method signatures that can be used with structs.
+
+    type Shape interface {
+        area() float64
+    }
+    
+    type Circle struct {
+        radius float64
+    }
+    
+    func (c Circle) area() float64 {
+        return math.Pi * c.radius * c.radius
+    }
+    
+    type Rectangle struct {
+        w, h float64
+    }
+    
+    func (r Rectangle) area() float64 {
+        return r.w * r.h
+    }
+    
+    func getArea(s Shape) float64 {
+        return s.area()
+    }
+    
+    func main() {
+        circle := Circle{1.5}
+        rect := Rectangle{2.5, 3.2}
+    
+        fmt.Printf("Circle area: %f", getArea(circle))
+        fmt.Printf("Rectangle area: %f", getArea(rect))
+    }
+
+## Web
+
+Simple web server:
+
+    package main
+    
+    import (
+        "fmt"
+        "net/http"
+    )
+    
+    func index(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "<h1>Hello world</h1>")
+    }
+    
+    func about(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "<h1>About stuff</h1>")
+    }
+    
+    func main() {
+        fmt.Println("Server running on http://localhost:5000")
+        http.HandleFunc("/", index)
+        http.HandleFunc("/about", about)
+        http.ListenAndServe(":5000", nil)
+    }
+
+## Golang for REST APIs: gin vs mux
+
+Gin:
+
+- more of a framework
+- more concise, less code
+- fast
+- customized response writing (e.g. JSON), validation
+
+Mux:
+
+- more of a wrapper of the standard go httpserver
+- more idiomatic
+- lightweight
+- more flexible routing
+
+All in all seems like Mux = node express, Gin = nestjs
+
+It seems it's probably best to learn Mux before Gin.

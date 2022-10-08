@@ -17,6 +17,7 @@ func main() {
 
 	fmt.Println(teddy)
 	fmt.Println(teddy.age)
+	// structs are mutable
 	teddy.age += 1
 	fmt.Println(teddy.age)
 
@@ -24,7 +25,7 @@ func main() {
 	var leo = Animal{"lion", 12, false}
 	fmt.Println(leo)
 
-	// don't assign property values
+	// Not assigning property values
 	var lalo = Animal{}
 	fmt.Println(lalo) // { 0 false}
 
@@ -40,5 +41,10 @@ func main() {
 	}
 
 	fmt.Println(tuco)
+
+	// Pointers are fine with structs
+	pTuco := &tuco
+	//pointers are automatically dereferenced.
+	fmt.Println(pTuco.age)
 
 }
