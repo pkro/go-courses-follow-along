@@ -30,6 +30,13 @@
 - [Maps](#maps)
 - [Range](#range)
 - [Pointers](#pointers)
+- [Closures](#closures)
+- [Structs](#structs)
+  - [Values](#values)
+  - [Methods](#methods)
+- [Interfaces](#interfaces)
+- [Web](#web)
+- [Golang for REST APIs: gin vs mux](#golang-for-rest-apis-gin-vs-mux)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
