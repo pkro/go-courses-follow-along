@@ -1,7 +1,37 @@
 # Golang stuff from various videos on youtube
 
-<!-- START doctoc -->
-<!-- END doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview / motivation](#overview--motivation)
+- [Ressources](#ressources)
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+- [Packages](#packages)
+  - [Imports](#imports)
+  - [Using 3rd party packages](#using-3rd-party-packages)
+  - [Creating own packages](#creating-own-packages)
+- [General syntax notes](#general-syntax-notes)
+- [Variables](#variables)
+  - [Declaration](#declaration)
+  - [Variable scope / visibility](#variable-scope--visibility)
+  - [Naming conventions](#naming-conventions)
+  - [Casting](#casting)
+- [Primitive datatypes](#primitive-datatypes)
+  - [numeric](#numeric)
+    - [Integer types](#integer-types)
+    - [Decimal types](#decimal-types)
+- [Functions](#functions)
+- [Arrays and slices](#arrays-and-slices)
+- [Slices](#slices)
+- [Conditionals](#conditionals)
+- [Loops](#loops)
+- [Maps](#maps)
+- [Range](#range)
+- [Pointers](#pointers)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview / motivation
 
