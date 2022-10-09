@@ -862,7 +862,7 @@ Receiver types:
 - Pointer receivers: to change struct members
 - Value receivers: "normal" methods that don't change anything
 
-
+Example
 
     type Person struct {
         name, title string // shortcut for multiple properties of the same type
