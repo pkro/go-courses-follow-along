@@ -131,7 +131,7 @@ If files are in the same package, they are available in the main import and don'
 
 See example in `golang_crash_course_basics/11-packages`.
 
-## General syntax notes
+## General syntax and other notes
 
 - no semicolons, thus no multiple statements in a line.
 - comments: the usual `//` and `/* blah */`
@@ -140,6 +140,7 @@ See example in `golang_crash_course_basics/11-packages`.
 - null is `nil`
 - Everything is passed by value (except when using pointers)
 - Concatenating non-string values with `+` is not possible; import `strconv` and use `"hey" + strconv.Itoa(numVar)` for conversion or use one of the `fmt.Printf` and related functions, e.g. `return fmt.Sprintf("Hey I'm %s and I'm %d years old", p.name, p.age)`
+- no ternary operator(!), use variables and if/else
 
 ## Variables
 
@@ -408,7 +409,7 @@ Syntax:
 - No param, no return type: `func functionName() {...}`
 - Params of different types, with return type: `func functionName(paramName paramyType, p2 p2type,...) returnType {...}`
 - Params of the same type: `func functionName(int1, int2 int) returnType {...}`
-- functions are first class and can be returned; example return see [closures](#closures)
+- functions are first class and can be passed as a parameter to a function or returned from a function; example return see [closures](#closures)
 
 Anonymous and IIFEs are supported:
 
@@ -416,6 +417,99 @@ Anonymous and IIFEs are supported:
 	func() {
 		fmt.Println("hey ho")
 	}()
+
+Multiple values can be returned; it is idiomatic to return errors as the last parameter.
+
+    // return multiple values (return types MUST be in parentheses)
+    // it is idiomatic (but not syntactically required) to return an
+    // error as the last return value; the other returned values
+    // should return the default values for their type if there IS
+    // an error
+    func divmod(a int, b int) (int, int, error) {
+        if b == 0 {
+            return 0, 0, fmt.Errorf("division by zero not allowed")
+        }
+        return a / b, a % b, nil
+    }
+    
+    // If we encounter errors that can't be recovered from,
+    // we can use panic(error) to halt the program completely
+    func makeFileWeAbsolutelyNeed() {
+        _, err := os.Create("/tmp/file")
+        if err != nil {
+            panic(err)
+        }
+    }
+    
+    func main() {
+        // anonymous function with immediately invoked function expression (IIFE)
+        func() {
+            fmt.Println("hey ho")
+        }()
+    
+        // no nested function declarations
+        // func ohNo() {} // doesn't work
+    
+        // nested lambdas are OK
+        ohYes := func() string { return "yes" }
+        fmt.Println(ohYes())
+    
+        // receive multiple values from a function
+        a, b, error := divmod(3, 4)
+    
+        if error == nil {
+            fmt.Printf("%d - %d", a, b)
+        } else {
+            fmt.Println(error)
+        }
+    }
+    
+    // functions can be defined wherever
+    func doStuff(what string) string {
+        fmt.Println(what)
+        return "stuff done"
+    }
+
+*Defer* is used to call a function when the surrounding function returns and is usually used to clean up resources similar to *finally* in e.g. Java
+
+    func main() {
+    
+        f := createFile("/tmp/defer.txt")
+        defer closeFile(f)
+        writeFile(f)
+        /*
+        creating
+        writing
+        closing
+        */
+    }
+    
+    func createFile(p string) *os.File {
+        fmt.Println("creating")
+        f, err := os.Create(p)
+        if err != nil {
+            panic(err)
+        }
+        return f
+    }
+    
+    func writeFile(f *os.File) {
+        fmt.Println("writing")
+        fmt.Fprintln(f, "data")
+    
+    }
+    
+    func closeFile(f *os.File) {
+        fmt.Println("closing")
+        err := f.Close()
+    
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "error: %v\n", err)
+            os.Exit(1)
+        }
+    }
+
+
 
 ## Arrays and slices
 
@@ -775,6 +869,30 @@ Receiver types:
         p.age++
     }
 
+### Factories
+
+It is idiomatic to create struct instances with factory methods prefixed by `"New"`:
+
+    func NewAnimal(class string, age int, gender bool) (Animal, error) {
+        if age >= 0 && class != "" { // example data validation
+            return Animal{
+                class:  class,
+                age:    age,
+                gender: gender,
+            }, nil
+        }
+        return Animal{}, fmt.Errorf("class empty or age < 0")
+    }
+    
+    // for large data structures we can of course return also a pointer;
+    // the compiler will allocate the memory accordingly so there's no
+    // computational overhead during execution
+    // the usage is the same, e.g. animal := NewAnimalP()
+    func NewAnimalP() (*Animal, error) {
+        // return empty animal for brevity
+        return &Animal{}, nil
+    }
+
 ## Interfaces
 
 Interfaces are named collections of method signatures that can be used with structs.
@@ -810,6 +928,38 @@ Interfaces are named collections of method signatures that can be used with stru
         fmt.Printf("Circle area: %f", getArea(circle))
         fmt.Printf("Rectangle area: %f", getArea(rect))
     }
+
+## Generics
+
+From go 1.18 onwards, go has generics similar to typescript or java using interfaces:
+
+    type Ordered interface {
+        int | float64 | string
+    }
+    
+    func min[T Ordered](values []T) (T, error) {
+        if len(values) == 0 {
+            var zero T // create variable to fill it with its default type
+            return zero, fmt.Errorf("empty")
+        }
+    
+        m := values[0]
+        for _, v := range values[1:] {
+            if v < m {
+                m = v
+            }
+        }
+    
+        return m, nil
+    }
+    
+    func main() {
+        fmt.Println(min([]float64{3, 1, 2}))
+        fmt.Println(min([]string{"Let's go", "Hey", "Ho"}))
+    }
+
+
+
 
 ## Web
 
@@ -856,3 +1006,9 @@ Mux:
 All in all seems like Mux = node express, Gin = nestjs
 
 It seems it's probably best to learn Mux before Gin.
+
+## Concurrency
+
+### Goroutines
+
+### Channels

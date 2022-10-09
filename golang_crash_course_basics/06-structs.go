@@ -2,13 +2,35 @@ package main
 
 import "fmt"
 
-func main() {
-	type Animal struct {
-		class  string
-		age    int
-		gender bool
-	}
+type Animal struct {
+	class  string
+	age    int
+	gender bool
+}
 
+// it is idiomatic to create struct instances with factory methods prefixed by New
+func NewAnimal(class string, age int, gender bool) (Animal, error) {
+	if age >= 0 && class != "" { // example data validation
+		return Animal{
+			class:  class,
+			age:    age,
+			gender: gender,
+		}, nil
+	}
+	return Animal{}, fmt.Errorf("class empty or age < 0")
+}
+
+// for large data structures we can of course return also a pointer;
+// the compiler will allocate the memory accordingly so there's no
+// computational overhead during execution
+// the usage is the same, e.g. animal := NewAnimalP()
+func NewAnimalP() (*Animal, error) {
+	// return empty animal for brevity
+	return &Animal{}, nil
+}
+
+func main() {
+	// normal instantiation
 	var teddy = Animal{
 		class:  "bear", // comma!
 		age:    24,
@@ -17,6 +39,13 @@ func main() {
 
 	fmt.Println(teddy)
 	fmt.Println(teddy.age)
+
+	// instantiation using factory defined above
+	var mauki, err = NewAnimal("cat", 3, true)
+	if err == nil {
+		fmt.Println(mauki)
+	}
+
 	// structs are mutable
 	teddy.age += 1
 	fmt.Println(teddy.age)
