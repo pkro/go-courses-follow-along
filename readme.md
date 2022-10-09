@@ -12,7 +12,7 @@
   - [Imports](#imports)
   - [Using 3rd party packages](#using-3rd-party-packages)
   - [Creating own packages](#creating-own-packages)
-- [General syntax notes](#general-syntax-notes)
+- [General syntax and other notes](#general-syntax-and-other-notes)
 - [Variables](#variables)
   - [Declaration](#declaration)
   - [Variable scope / visibility](#variable-scope--visibility)
@@ -34,9 +34,14 @@
 - [Structs](#structs)
   - [Values](#values)
   - [Methods](#methods)
+  - [Factories](#factories)
 - [Interfaces](#interfaces)
+- [Generics](#generics)
 - [Web](#web)
 - [Golang for REST APIs: gin vs mux](#golang-for-rest-apis-gin-vs-mux)
+- [Concurrency](#concurrency)
+  - [Goroutines](#goroutines)
+  - [Channels](#channels)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
