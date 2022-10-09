@@ -528,6 +528,7 @@ Multiple values can be returned; it is idiomatic to return errors as the last pa
 - fixed length
 - typed
 
+Example
 
     // initialize without values
     var stuff [3]string
