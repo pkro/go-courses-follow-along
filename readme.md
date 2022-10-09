@@ -1,4 +1,4 @@
-# Golang stuff from various videos on youtube
+# Golang stuff from various resources
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -856,6 +856,7 @@ Receiver types:
 
 - Pointer receivers: to change struct members
 - Value receivers: "normal" methods that don't change anything
+
 
 
     type Person struct {
