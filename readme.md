@@ -65,6 +65,7 @@
 - https://pkg.go.dev/std Package documentation
 - [go forum](https://forum.golangbridge.org/categories)
 - https://gobyexample.com/ (concise explanations with code for everything covered here)
+- https://go-proverbs.github.io/
 
 ## Project Structure
 
@@ -123,11 +124,15 @@ All imports have to be used somewhere in order for the program to be compiled.
 
 Problem: We want to use a 3rd party package, e.g. hosted on GitHub. We *don't* want to use `go get -u github.com/gorilla/mux` to install the package globally on the system.
 
-1) Turn off "optimize imports" as a save action in IntelliJ as otherwise they will be removed, so go can't analyze which packages are needed (is that really the way to go?)
+1) *Turn off "optimize imports" as a save action in IntelliJ as otherwise they will be removed, so go can't analyze which packages are needed (is that really the way to go?)*
 2) include the package needed in `main.go` (or wherever it is needed), e.g. `import "github.com/gorilla/mux"`
-3) In the projects folder (where `main.go` is located, run `go mod init [url or fake url to project]`, e.g. `go mod init example.com/packages`
+3) In the projects' folder (where `main.go` is located, run `go mod init [url or fake url to project]`, e.g. `go mod init example.com/packages`
 4) run `go mod tidy` to add module requirements and version numbers inferred by the imports to the `go.mod` file and also adds a `go.sum` file with version numbers and sub-dependencies.
 5) When removing imports, re-run `go mod tidy` to remove them from the `go.mod` and `go.sum` files.
+
+This can be thought of `npm init` (= `go mod init`) and `npm install` (=`go mod tidy`).
+
+
 
 ### Creating own packages
 
@@ -153,6 +158,7 @@ See example in `golang_crash_course_basics/11-packages`.
 - Everything is passed by value (except when using pointers)
 - Concatenating non-string values with `+` is not possible; import `strconv` and use `"hey" + strconv.Itoa(numVar)` for conversion or use one of the `fmt.Printf` and related functions, e.g. `return fmt.Sprintf("Hey I'm %s and I'm %d years old", p.name, p.age)`
 - no ternary operator(!), use variables and if/else
+- `else` must be on the same line as the previous closing brace (`...} else {`)
 
 ## Variables
 
@@ -972,6 +978,98 @@ From go 1.18 onwards, go has generics similar to typescript or java using interf
         fmt.Println(min([]string{"Let's go", "Hey", "Ho"}))
     }
 
+## Error handling
+
+### pkg/errors
+
+Simple error handling: errors are treated as values and are returned from functions.
+
+More sophisticated error handling with stack traces etc. can be done with the package `github.com/pkg/errors`, a drop-in replacement for the built in `pkg/errors` package. 
+
+    import (
+        "fmt"
+        "github.com/pkg/errors"
+        "log"
+        "os"
+    )
+    
+    type Config struct {
+    }
+    
+    func readConfig(path string) (*Config, error) {
+        file, err := os.Open(path)
+        if err != nil {
+            return nil, errors.Wrap(err, "can't open file")
+        }
+        defer file.Close()
+    
+        cfg := &Config{}
+        return cfg, nil
+    }
+    
+    func setupLogging() {
+        out, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 064)
+        if err != nil {
+            return
+        }
+        // errors / stack traces will be automatically appended to the file above
+        log.SetOutput(out)
+    }
+    
+    func main() {
+        setupLogging()
+        cfg, err := readConfig("some/nonexisting/path.toml")
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "error: %s\n", err)
+            log.Printf("error: %+v", err)
+            os.Exit(1)
+        } else {
+            fmt.Println(cfg)
+        }
+    }
+
+### Panic and recover
+
+#### Panic
+
+Examples and quotes directly from [go by example](https://gobyexample.com/panic):
+
+ > A `panic` A panic typically means something went unexpectedly wrong. Mostly we use it to fail fast on errors that shouldn’t occur during normal operation, or that we aren’t prepared to handle gracefully. 
+ > 
+
+
+`panic("message")` can be called / "thrown", but shouldn't.
+
+    // If we encounter errors that can't be recovered from,
+    // we can use panic(error) to halt the program
+    func makeFileWeAbsolutelyNeed() {
+        _, err := os.Create("/tmp/file")
+        if err != nil {
+            panic(err)
+        }
+    }
+
+>Go makes it possible to recover from a panic, by using the recover built-in function. A recover can stop a panic from aborting the program and let it continue with execution instead.
+
+#### Recover
+
+> recover must be called within a deferred function. When the enclosing function panics, the defer will activate and a recover call within it will catch the panic.
+
+    func mayPanic() {
+        panic("a problem")
+    }
+    
+    func main() {
+        defer func() {
+            if r := recover(); r != nil {
+                fmt.Println("Recovered. Error:\n", r)
+            }
+        }()
+    
+        mayPanic()
+    
+        fmt.Println("After mayPanic()")
+    }
 
 
 
