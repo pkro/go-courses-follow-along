@@ -159,6 +159,8 @@ See example in `golang_crash_course_basics/11-packages`.
 - Concatenating non-string values with `+` is not possible; import `strconv` and use `"hey" + strconv.Itoa(numVar)` for conversion or use one of the `fmt.Printf` and related functions, e.g. `return fmt.Sprintf("Hey I'm %s and I'm %d years old", p.name, p.age)`
 - no ternary operator(!), use variables and if/else
 - `else` must be on the same line as the previous closing brace (`...} else {`)
+- `Printf`: `%v` prints the value of *any* type, `%T` prints the type.
+- Methods start with Uppercase (as only these are exported)
 
 ## Variables
 
@@ -420,6 +422,36 @@ Operators that can be used with integers:
 
 #### Decimal types
 
+## Strings
+
+    func main() {
+        // strings must be defined with double quotes or backtick (raw strings)
+        book := "Power of habit"
+    
+        // part of strings can be accessed with slices
+        fmt.Println(book[6:])  // of habit
+        fmt.Println(book[:6])  // Power
+        fmt.Println(book[6:9]) // of
+    
+        // strings are immutable (but not re-assignable)
+        // book[0] = 116 // error
+    
+        // strings are unicode enables
+        book = "⚓"
+    
+        // raw strings ignore special characters (\n etc) and can be written on multiple lines
+        poem := `Roses are red
+        some are blue`
+            fmt.Println(poem)
+    }
+
+Many common functions are in the `strings` package.
+
+    // split by whitespace in array
+	fmt.Println(strings.Fields("a b    c")) // [a b c]
+	// split by any character + uppercase
+	fmt.Println(strings.Split(strings.ToUpper("a:b:c"), ":")) // [A B C]
+
 ## Functions
 
 Syntax: 
@@ -613,6 +645,8 @@ Slices can contain different types and are a wrapper for arrays.
 
 ## Conditionals
 
+### if
+
     // parenthesis are optional, convention is not to use them
 	if a == b {
 		fmt.Println("false")
@@ -621,6 +655,14 @@ Slices can contain different types and are a wrapper for arrays.
 	} else {
 		fmt.Println("not happening")
 	}
+
+Variables can be initialized in an if conditional:
+
+    if frac := a / b; frac > 0.5 {
+      fmt.Printf("%v is more thatn half of %v\n", a, b)
+    }
+
+### switch
 
 	// no break necessary
 	switch a {
@@ -632,9 +674,22 @@ Slices can contain different types and are a wrapper for arrays.
 		fmt.Println("it's probably not serious")
 	}
 
+    // naked switch
+	switch {
+	case a > b:
+		fmt.Println("%v is greater than %v", a, b)
+
+	case a < b:
+		fmt.Println("%v is smaller than %v", a, b)
+
+	default:
+		fmt.Println("%v == %v", a, b)
+	}
+
+
 ## Loops
 
-Only one loop construct (no while or do). Others can be constructed as with all for loops in most languages.
+Only one loop construct (no while or do). Others can be constructed as with all for loops in most languages. `break` and `continue` are supported as in other languages.
 
     // classic for loop
 	for i := 0; i < 10; i++ { // paranthesis are always required, even for just one line
@@ -655,21 +710,37 @@ Only one loop construct (no while or do). Others can be constructed as with all 
 		fmt.Println(idx, id)
 	}
 
+    // "infinite" loop with break
+	x := 0
+	for {
+		if x > 2 {
+			break
+		}
+		x++
+	}
+
 ## Maps
 
 Maps are unordered like in most other languages.
 
-    // declare with values:
+	// declare with values:
 	emails := map[string]string{"Bob": "bob@gmail.com", "Joe": "joe@gmail.com"}
 	fmt.Println(emails["Bob"])
 
-    // create empty mape: make(map[key-type]val-type)
+	// declare multiline
+	emails2 := map[string]string{
+		"Bob": "bob@gmail.com",
+		"Joe": "joe@gmail.com", // must have trailing comma
+	}
+	fmt.Println(emails2)
+
+	// create empty mape: make(map[key-type]val-type)
 	cart := make(map[string]int)
 	cart["milk"] = 3
 	cart["cheese"] = 2
 	fmt.Println(cart) // map[cheese:2 milk:3]
 
-	// default values still work
+	// create new entry and add 3 to its default value (0)
 	cart["someNewItem"] += 3
 	fmt.Println(cart) // map[cheese:2 milk:3 someNewItem:3]
 
@@ -687,6 +758,15 @@ Maps are unordered like in most other languages.
 	delete(cart, "cheese")
 
 	fmt.Println(len(cart)) // length like usual with len
+
+	// iterate over map
+	for key := range emails {
+		fmt.Println(key) // Bob Joe
+	}
+
+	for key, value := range emails {
+		fmt.Println(key + " " + value) // Bob bob@gmail.com Joe joe@gmail.com
+	}
 
 ## Range
 
@@ -1122,5 +1202,7 @@ It seems it's probably best to learn Mux before Gin.
 ## Concurrency
 
 ### Goroutines
+
+Light, 1000s can be spawned
 
 ### Channels

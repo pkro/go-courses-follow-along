@@ -25,4 +25,13 @@ func main() {
 		fmt.Println(idx, id)
 	}
 
+	// "infinite" loop with break
+	x := 0
+	for {
+		if x > 2 {
+			break
+		}
+		x++
+	}
+
 }
