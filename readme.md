@@ -1156,7 +1156,203 @@ Examples and quotes directly from [go by example](https://gobyexample.com/panic)
         fmt.Println("After mayPanic()")
     }
 
+## Concurrency
 
+### Goroutines
+
+Light, 1000s can be spawned on a single machine.
+
+Run any function as a goroutine using the `go` keyword
+
+    import (
+        "fmt"
+        "net/http"
+        "sync"
+        "time"
+    )
+    
+    func returnType(url string) {
+        resp, err := http.Get(url)
+        if err != nil {
+            fmt.Printf("error: %s\n", err)
+            return
+        }
+    
+        defer resp.Body.Close()
+        ctype := resp.Header.Get("content-type")
+        fmt.Printf("%s -> %s\n", url, ctype)
+    }
+    
+    func sitesSerial(urls []string) {
+        for _, url := range urls {
+            returnType(url)
+        }
+    }
+    
+    func sitesConcurrent(urls []string) {
+        var wg sync.WaitGroup
+        for _, url := range urls {
+            // add 1 to the number of goroutines to wait for
+            wg.Add(1)
+            // go runs the function (here an anonymous IIFE, but could be any function)
+            // in a separate goroutine
+            go func(url string) {
+                returnType(url)
+                wg.Done() // removes 1 from waitgroup
+            }(url)
+            wg.Wait() // waits for all the goroutines to finish
+        }
+    }
+    func main() {
+        urls := []string{
+            "https://golang.org",
+            "https://api.github.com",
+            "https://httpbin.org/ip",
+        }
+    
+        start := time.Now()
+        sitesSerial(urls)
+        fmt.Println(time.Since(start))
+    
+        start = time.Now()
+        sitesConcurrent(urls)
+        fmt.Println(time.Since(start))
+    }
+
+
+### Channels
+
+- Channels are used to communicate between goroutines.
+- Channels are one-directional pipes with a type (e.g. `string` or `int`).
+- Creation: `ch := make(chan int)`
+- receive <- [channel] <- send, e.g. `ch <- 353` sends 353 to a channel, `val := <- ch` reads a value from the channel
+- Sender is blocked if there's no receiver and vice versa.
+
+Blocking:
+
+	ch := make(chan int)
+	ch <- 353 // send 353 to channel
+	// execution of enclosing function is now blocked until the channel is read
+
+Does not block:
+
+    func main() {
+        ch := make(chan int)
+    
+        // goroutine runs concurrently to the main one
+        go func() {
+            ch <- 353
+        }()
+    
+        val := <-ch // receive
+        fmt.Println(val) // 353
+    }
+
+Channels are unbuffered by default, meaning they only accept sends if there's a receive waiting.
+
+Channels can be buffered by adding a second parameter to make: `messages := make(chan string, 2)`
+
+	ch2 := make(chan int, 1)
+	ch2 <- 19
+	// does NOT block at this point as the channel is buffered now
+	val2 := <-ch2
+
+	fmt.Println(val2)
+
+### Select
+
+`select` lets you wait on multiple channel operations.
+
+	ch1, ch2 := make(chan int), make(chan int)
+
+	go func() {
+		ch1 <- 42
+	}()
+
+	// once one of the channels becomes available (true for receving AND sending),
+	// it receives from the channel of the selected case
+	select {
+	case val := <-ch1:
+		fmt.Printf("got %d from ch1\n", val)
+	case val := <-ch2:
+		fmt.Printf("got %d from ch2\n", val)
+	}
+
+One thing select is used for are timeouts.
+
+    out := make(chan float64)
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		out <- 3.14
+	}()
+
+	select {
+	case val := <-out:
+		fmt.Printf("got %f\n", val)
+	// time.After runs another goroutine behind the scenes
+	// and then sends a signal over a channel
+	case val := <-time.After(20 * time.Millisecond):
+		fmt.Printf("timeout signal %v", val) // timeout signal 2022-10-12 07:28:14.529286716 +0200 CEST m=+0.020190679
+	}
+
+The value of the timeout signal is usually not important and not read:
+
+    case <-time.After(20 * time.Millisecond):
+		// do something if timed out
+	}
+
+### Context
+
+>A Context carries deadlines, cancellation signals, and other request-scoped values across API boundaries and goroutines. [gobyexample](https://gobyexample.com/context)
+
+>Sidenote: A Goroutine leak is a memory leak that occurs when a Goroutine is not terminated and is left hanging in the background for the application's lifetime. [betterprogramming.pub](https://betterprogramming.pub/common-goroutine-leaks-that-you-should-avoid-fe12d12d6ee)
+
+
+    type Bid struct {
+        AdURL string
+        Price float64
+    }
+    
+    func bestBid(url string) Bid {
+        time.Sleep(20 * time.Millisecond)
+        return Bid{"http://example.com", 1.99}
+    }
+    
+    var defaultBid = Bid{"http://example.com/default", 0.5}
+    
+    func findBid(ctx context.Context, url string) Bid {
+        ch := make(chan Bid, 1) // buffered to avoid goroutine leak
+        go func() {
+            ch <- bestBid(url)
+        }()
+    
+        select {
+        case bid := <-ch:
+            return bid
+    
+        case <-ctx.Done():
+            return defaultBid
+        }
+    }
+    
+    func main() {
+        ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+        defer cancel()
+        url := "https://http.cat/418"
+        bid := findBid(ctx, url)
+        fmt.Println(bid) // {http://example.com 1.99}
+    
+        // lower timeout
+        ctx, cancel = context.WithTimeout(context.Background(), 10*time.Millisecond)
+        defer cancel()
+        url = "https://http.cat/404"
+        bid = findBid(ctx, url)
+        fmt.Println(bid) // {http://example.com/default 0.5}
+    }
+
+## Project management
+
+## Networking
 
 ## Web
 
@@ -1204,10 +1400,4 @@ All in all seems like Mux = node express, Gin = nestjs
 
 It seems it's probably best to learn Mux before Gin.
 
-## Concurrency
 
-### Goroutines
-
-Light, 1000s can be spawned
-
-### Channels
