@@ -45,11 +45,15 @@
   - [Panic and recover](#panic-and-recover)
     - [Panic](#panic)
     - [Recover](#recover)
-- [Web](#web)
-- [Golang for REST APIs: gin vs mux](#golang-for-rest-apis-gin-vs-mux)
 - [Concurrency](#concurrency)
   - [Goroutines](#goroutines)
   - [Channels](#channels)
+  - [Select](#select)
+  - [Context](#context)
+- [Project management](#project-management)
+- [Networking](#networking)
+- [Web](#web)
+- [Golang for REST APIs: gin vs mux](#golang-for-rest-apis-gin-vs-mux)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
