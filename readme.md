@@ -1355,6 +1355,53 @@ The value of the timeout signal is usually not important and not read:
 
 ## Project management
 
+### Manage requirements
+
+`go.mod` file at top of project, similar to `package.json` (but with specific version numbers like in `package_lock.json`). Can be created using `go mod init` or (IntelliJ) `File->New->Go module file`.
+
+Format:
+
+    module github.com/pkro/some-project
+    
+    go 1.18
+    
+    // direct dependencies
+    require (
+      github.com/pkg/errors v0.9.1
+      github.com/stretchr/testify v1.7.0
+    )
+    
+    // indirect dependencies - depenndencies of the direct dependencies
+    require (
+      gopkg.in/yaml.v4 v1.1.0
+      github.com/stretchr/testify  v1.1.2
+    )
+
+ `go mod tidy` installs the dependencies like `npm install`.
+
+### Testing
+
+`go build` will ignore all files with a `_test` suffix, e.g. `sqrt_test.go`.
+
+Run tests with `go test` or through IDE.
+
+Run tests recursively in all packages in the directory with `go test -v` and `go test -v ./...` to include all subpackages.
+
+
+[github.com/stretchr/testify](https://pkg.go.dev/github.com/stretchr/testify) provides less verbose testing, mocks and assertions.
+
+See `golang_crash_course_basics/24-testing` for both go tests and testify examples.
+
+### Benchmarking and profiling
+
+`testing` provides benchmarking and profiling tests using `testing.B`.
+
+Run benchmarks without normal tests (`-run NONE? ) with `go test -bench . -run NONE` or via IDE. 
+
+Create a profiling file (`cpu.prof`) using `go test -bench . -run NONE -cpuprofile=cpu.prof`. 
+
+View / analyze this file using `go tool pprop cpu.prof` or interactively and graphically in the browser using `go tool pprof -http=:8020 cpu.prof` ([graphviz](https://graphviz.org/download/) must be installed: `sudo apt install graphviz`)
+
 ## Networking
 
 ## Web
