@@ -55,6 +55,9 @@
   - [Testing](#testing)
   - [Benchmarking and profiling](#benchmarking-and-profiling)
 - [Networking](#networking)
+  - [JSON / struct tags (field tags)](#json--struct-tags-field-tags)
+  - [HTTP calls](#http-calls)
+  - [Timeouts and size limits](#timeouts-and-size-limits)
 - [Web](#web)
 - [Golang for REST APIs: gin vs mux](#golang-for-rest-apis-gin-vs-mux)
 
