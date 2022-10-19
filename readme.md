@@ -1408,6 +1408,146 @@ View / analyze this file using `go tool pprop cpu.prof` or interactively and gra
 
 ## Networking
 
+### JSON / struct tags (field tags)
+
+http://pkg.go.dev/encoding/json
+
+Structs provide a way to add field tags (= struct tags) to encode meta-data about a field. This, among other things, allows to map the structs key names to the genereated or interpreted JSON (as struct fields. These tags have no effect if no other go code examines them.
+
+    import (
+        "encoding/json"
+        "fmt"
+        "log"
+        "os"
+        "strings"
+    )
+    
+    // field tags in ``
+    type Request struct {
+        Login  string  `json:"user"`
+        Type   string  `json:"type"`
+        Amount float64 `json:"amount"`
+    }
+    
+    var data = `
+    {
+        "user": "pkro",
+        "type": "deposit",
+        "amount": 123.4
+    }
+    `
+    
+    func main() {
+        rdr := strings.NewReader(data) // simulate file / socket
+    
+        // decode request
+        dec := json.NewDecoder(rdr)
+    
+        var req Request
+    
+        // param must be pointer
+        if err := dec.Decode(&req); err != nil {
+            log.Fatalf("error: can't decode %s", err)
+        }
+    
+        fmt.Printf("got %v\n", req)
+    
+        // create rerespsponse
+        prevBalance := 1_000_000.0 // simulate loaded from db
+        resp := map[string]interface{}{
+            "ok":      true,
+            "balance": prevBalance + req.Amount,
+        }
+    
+        // Encode response
+    
+        enc := json.NewEncoder(os.Stdout) // passes to stdout, so no println necessary
+    
+        if err := enc.Encode(resp); err != nil {
+            log.Fatalf("couldn't decode, %s", err)
+        }
+    }
+
+### HTTP calls
+
+`http://pkg.go.dev/net/http`
+
+```go
+func main() {
+    // GET request
+    resp, err := http.Get("https://httpbin.org/get")
+    if err != nil {
+        log.Fatalf("error: can't call url")
+    }
+    defer resp.Body.Close()
+
+    io.Copy(os.Stdout, resp.Body)
+
+    fmt.Println("------------------------------------")
+
+    // POST request
+    type Job struct {
+        User   string `json:"user"`
+        Action string `json:"action"`
+        Count  int    `json:"count"`
+    }
+
+    job := &Job{
+        User:   "pkro",
+        Action: "punch",
+        Count:  1,
+    }
+
+    var buf bytes.Buffer
+    enc := json.NewEncoder(&buf)
+    if err := enc.Encode(job); err != nil {
+        log.Fatalf("error: can't call url - %v", err)
+    }
+    
+    resp, err = http.Post("https://httpbin.org/post", "application/json", &buf)
+    if err != nil {
+        log.Fatalf("error: can't post to url")
+    }
+    io.Copy(os.Stdout, resp.Body)
+}
+```
+
+### Timeouts and size limits
+
+```go
+package main
+
+import (
+	"context"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"time"
+)
+
+func main() {
+	// limit time
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Millisecond)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://httpbin.org/ip", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// limit response body
+	const megabyte = 1 << 20 // fancy for 1024 * 1024
+	r := io.LimitReader(resp.Body, megabyte)
+	io.Copy(os.Stdout, r)
+}
+```
 ## Web
 
 Simple web server:
@@ -1433,6 +1573,94 @@ Simple web server:
         http.HandleFunc("/about", about)
         http.ListenAndServe(":5000", nil)
     }
+
+More structured web server:
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+)
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "OK")
+}
+
+type MathRequest struct {
+	Op    string  `json:"op"`
+	Left  float64 `json:"left"`
+	Right float64 `json:"right"`
+}
+
+type MathResponse struct {
+	Error  string  `json:"error"`
+	Result float64 `json:"result"`
+}
+
+func mathHandler(w http.ResponseWriter, r *http.Request) {
+	// step 1: decode and validate
+	defer r.Body.Close()
+	dec := json.NewDecoder(r.Body)
+	req := &MathRequest{}
+
+	if err := dec.Decode(req); err != nil {
+		log.Printf("error: bad JSON: %s", err)
+		http.Error(w, "bad JSON", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.Contains("+-*/", req.Op) {
+		log.Printf("error: bad operator: %q", req.Op)
+		http.Error(w, "unknown operator", http.StatusBadRequest)
+	}
+
+	// step 2: work
+	resp := &MathResponse{}
+	switch req.Op {
+	case "+":
+		resp.Result = req.Left + req.Right
+	case "-":
+		resp.Result = req.Left - req.Right
+	case "*":
+		resp.Result = req.Left * req.Right
+	case "/":
+		resp.Result = req.Left / req.Right
+	default:
+		resp.Error = fmt.Sprintf("unknon operation: %s", req.Op)
+	}
+
+	// step 3: Encode result
+	w.Header().Set("Content-Type", "application/json")
+	if resp.Error != "" {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		log.Printf("can't encode %v - %s", resp, err)
+	}
+}
+
+func main() {
+
+	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/math", mathHandler)
+
+	addr := ":8030"
+	log.Printf("server running on http://localhost%s\n", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+Test: `curl -d '{"op": "/", "left": 12, "right": 4}' http://localhost:8030/math`
+
 
 ## Golang for REST APIs: gin vs mux
 
